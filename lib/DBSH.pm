@@ -22,6 +22,7 @@ use Data::Dumper;
 use DBI;
 use File::HomeDir;
 use Hash::Util qw(lock_keys);
+use IO::File;
 our $VAR1;
 
 my $home = File::HomeDir->my_home;
@@ -39,6 +40,7 @@ my @keys = qw(
     dbsh_switch1
     dbsh_switch2
     history_file
+    password_file
     input_file
     switches
     term
@@ -70,6 +72,7 @@ sub main_dbsh_run {
 sub init {
     my ($self) = @_;
     $self->{history_file} = "$home/.dbsh_history";
+    $self->{password_file} = "$home/.dbsh_password";
     $self->{term} = Term::ReadLine->new('squeeeeps');
 
     $self->{commands} = {
@@ -101,7 +104,9 @@ sub command_loop {
     my ($database,$hostname,$port) = ('menagerie','localhost',3306);
     my $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
 
-    my ($user, $password) = ('dmb','l');
+    my $user = 'dmb';
+    my $password = $self->get_password();
+
     my $dbh = DBI->connect($dsn, $user, $password);
 
     my $sth;
@@ -141,6 +146,31 @@ sub do_edit {
 sub do_quit {
     my ($self) = @_;
     exit;
+}
+
+sub get_password {
+    my ($self) = @_;
+    my $password = slurp_file($self->{password_file});
+    for ( $password ) {
+        s/^\s*//;
+        s/\s*$//;
+    }
+    return $password;
+}
+
+sub slurp_file {
+    my $filename = shift;
+
+    die "Not an object method" if ref $filename;
+
+    my $ifh = IO::File->new($filename, '<');
+    die if (!defined $ifh);
+
+    my $contents = do { local $/; <$ifh> };
+
+    $ifh->close;
+
+    return $contents;
 }
 
 sub get_help {
