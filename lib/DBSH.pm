@@ -104,7 +104,7 @@ sub command_loop {
     my ($database,$hostname,$port) = ('menagerie','localhost',3306);
     my $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
 
-    my $user = 'dmb';
+    my $user = 'dave';
     my $password = $self->get_password();
 
     my $dbh = DBI->connect($dsn, $user, $password);
